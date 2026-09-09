@@ -38,23 +38,29 @@ python -m http.server 8765     # ou: npx serve .
 
 ## A ordem das seções (e por quê)
 
-A narrativa vai do **time** para o **esporte**, e não o contrário: quem chega
-quer saber quem é a Storm antes de saber o que é cheerleading.
+A página é toda sobre a equipe: quem é, de onde veio, com quem treina e o que
+já ganhou. Sem seção explicando o esporte.
 
 | # | Seção | O que tem |
 |---|---|---|
 | — | Herói | Wordmark com o raio, frase-síntese, CTA de WhatsApp |
 | — | Faixa de parceiro | Companhia do Corpo em destaque, logo abaixo do herói |
 | 01 | A Storm | Quem é a equipe, o raio no lugar do S, valores e números |
-| 02 | Nossa história | Prólogo de 2022–2023 + linha do tempo de 2024 a 2026 |
+| 02 | Nossa história | Linha do tempo clicável: 4 anos, cada um abre um popup |
 | 03 | Parceiros | Companhia do Corpo + convite a novos patrocinadores |
-| 04 | Campeonatos | Resultados, temporada atual e a próxima |
+| 04 | Campeonatos | Os dois campeonatos disputados, com logo e resultado, + temporadas |
 | 05 | Instagram | 30 publicações reais; clicar abre o post original |
-| 06 | O esporte | O que é cheerleading + de onde ele veio |
-| 07 | Faça parte | WhatsApp e Instagram, com dados de inscrição |
+| 06 | Faça parte | WhatsApp e Instagram, com dados de inscrição |
 
-O esporte fica no fim de propósito: é conteúdo de contexto, útil para quem
-nunca ouviu falar de cheer, mas não é o que vende a equipe.
+**Havia uma seção "O esporte"** — o que é cheerleading, os cinco elementos,
+funções, divisões e a história do esporte de 1898 até os World Games. Foi
+removida a pedido do cliente: era um terço do texto do site e não é o que vende
+a equipe. O site passou de 2.212 para **1.172 palavras** (11 para 6 minutos de
+leitura). Se um dia fizer falta, o histórico do git tem a seção inteira, com
+o CSS que a acompanhava (`.split`, `.cards`, `.dual`, `.deflist`, `.timeline`).
+
+> A contrapartida: quem nunca viu cheerleading não encontra mais no site o que
+> o esporte é. Vale ficar de olho se aparecer essa dúvida no WhatsApp.
 
 ## Os fatos do time (todos verificáveis)
 
@@ -69,7 +75,8 @@ de dado novo, confirme com a equipe ou tire de uma publicação do perfil.
 - **Arena Legacy 2025**, Curitiba, 11 de outubro — este é o **campeonato
   nacional**: **vice-campeã**, com prata em Group Stunt Coed N2 e prata em
   Group Stunt Coed N3
-- **Olimpíadas dos Grupos Escoteiros**, abril de 2026 — apresentação
+- **Olimpíadas dos Grupos Escoteiros**, abril de 2026 — apresentação, **não
+  foi competição**: aparece na linha do tempo de 2026, não na seção Campeonatos
 - **Temporada 2026**: elenco fechado, com competição ainda pela frente
 - **Temporada 2027**: try out em breve
 - Parceira oficial desde 2025: academia **Companhia do Corpo**
@@ -126,6 +133,53 @@ sistema se o site abrir offline.
 > foram afrouxadas para os acentos do português (Ó, Ã, Ê) não encostarem na
 > linha de cima — se mexer no tamanho dos títulos, confira isso.
 
+## A linha do tempo clicável
+
+"Nossa história" são **quatro cartões de ano** (2022–23, 2024, 2025, 2026). Cada
+um abre um popup do próprio site com o que aconteceu naquele ano.
+
+O texto de cada ano **não vive dentro do JavaScript**: fica no HTML, num
+`<div class="anos-fonte" hidden>` no fim da seção. O `app.js` clona o `<article>`
+correspondente para dentro do modal quando o ano é clicado. Assim há uma cópia
+só do conteúdo, e ela continua no código-fonte da página para o Google ler.
+
+Para **acrescentar um ano**:
+
+1. um `<li>` com o botão na `<ol class="linha">`, com `data-ano="ano-2027"`;
+2. um `<article id="ano-2027" data-rotulo="2027">` dentro de `.anos-fonte`.
+
+O `data-rotulo` é o que aparece grande no topo do popup. A navegação
+"ano anterior / próximo ano" segue a ordem dos botões, e os extremos
+desabilitam sozinhos.
+
+Teclado: `Esc` fecha, `←` e `→` trocam de ano, e o foco volta para o cartão
+do ano ao fechar.
+
+### Cuidado com `max-height` em imagem
+
+As fotos dentro do popup usam `width:auto; height:auto; max-width:100%;
+max-height:min(340px,46vh)`. **O `height:auto` não é opcional**: sem ele, o
+atributo `height` do HTML vale como altura fixa, e aí `max-width` e `max-height`
+se aplicam em separado — a imagem é esmagada para caber nos dois limites ao
+mesmo tempo. Foi o que acontecia no celular, com até 47% de deformação nas
+fotos horizontais. A mesma regra vale para `.champ__logo img`.
+
+A capa de cada cartão usa `object-fit:cover` numa moldura 3:2 — por isso as
+fotos de capa são as **paisagens** do acervo (`stunt-paranaense`,
+`medalhas-legacy`, `escoteiros`), que perdem pouco nas laterais. Se trocar por
+uma foto vertical, ela vai ser cortada com força.
+
+## Logos dos campeonatos
+
+`camp-paranaense-logo.png` e `camp-legacy-logo.png` saíram dos arquivos que o
+cliente mandou com fundo removido. O da Legacy vinha com o fundo apenas
+*meio* transparente (alfa 128 em toda a volta, que apareceria como um quadrado
+avermelhado no fundo escuro) — o alfa foi remapeado para zerar o fundo sem
+serrilhar a borda do escudo.
+
+Cards sem logo (Escoteiros e as temporadas) levam uma
+`<figure class="champ__logo">` vazia, só para os títulos alinharem na grade.
+
 ## Sobre as imagens
 
 Duas origens, com qualidades diferentes:
@@ -133,13 +187,16 @@ Duas origens, com qualidades diferentes:
 **Fotos da equipe** — quase todas as imagens vieram dos arquivos originais
 enviados pela Storm, em alta resolução: `hero.jpg`, `hero-mobile.jpg`,
 `equipe-tablado.jpg`, `stunt-legacy.jpg`, `medalhas-legacy.jpg`,
-`equipe-medalhas.jpg`, `trofeu-paranaense.jpg`, `piramide-paranaense.jpg`,
-`stunt-paranaense.jpg`, `uniforme.jpg`, `escoteiros.jpg`, `camp-luiza.jpg` e
+`equipe-medalhas.jpg`, `trofeu-paranaense.jpg`, `stunt-paranaense.jpg`, `uniforme.jpg`, `escoteiros.jpg`, `camp-luiza.jpg` e
 `camp-satori.jpg`. São elas que carregam o site.
 
 As únicas imagens vindas do Instagram são as miniaturas da grade em `posts/`,
 onde a resolução máxima pública é **640 px** — tamanho suficiente para o que
-elas são: miniaturas de publicação.
+elas são: miniaturas de publicação. Elas aparecem em **colunas em cascata**,
+cada uma na proporção original do post (quadrada, 4:5 ou vertical de reel),
+como no próprio Instagram. Os campos `w` e `h` de cada item em `posts.js`
+existem só para o navegador reservar a altura antes da imagem carregar — se
+trocar uma miniatura, atualize-os.
 
 O primeiro bloco da linha do tempo (2022–2023) **não tem foto de propósito**:
 não existe registro daquela época nos arquivos da equipe, e encher o espaço com

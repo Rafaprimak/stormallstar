@@ -75,7 +75,11 @@
   }
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') fecharMenu();
+    if (e.key === 'Escape') { fecharAno(); fecharMenu(); }
+    if (modal && !modal.hidden) {
+      if (e.key === 'ArrowLeft' && anoAtual > 0) pintarAno(anoAtual - 1);
+      if (e.key === 'ArrowRight' && anoAtual < botoesAno.length - 1) pintarAno(anoAtual + 1);
+    }
   });
 
   /* ---------------------------------------------------- ticker infinito */
@@ -106,6 +110,58 @@
     clearTimeout(timerTicker);
     timerTicker = setTimeout(ajustarTicker, 250);
   });
+
+  /* ---------------------------------------------------- linha do tempo: popup do ano */
+  /* O conteúdo de cada ano mora no HTML (dentro de .anos-fonte, oculto) e é
+     clonado para dentro do modal. Assim existe uma cópia só, indexável. */
+  var botoesAno  = $$('.ano');
+  var modal      = $('#modal');
+  var modalAno   = $('#modalAno');
+  var modalCorpo = $('#modalCorpo');
+  var btnAnt     = $('#modalAnt');
+  var btnProx    = $('#modalProx');
+  var anoAtual   = 0;
+
+  function pintarAno(i) {
+    var origem = document.getElementById(botoesAno[i].getAttribute('data-ano'));
+    if (!origem) return;
+    anoAtual = i;
+    modalAno.textContent = origem.getAttribute('data-rotulo') || '';
+    var copia = origem.cloneNode(true);
+    copia.removeAttribute('id');            // evita id duplicado no documento
+    modalCorpo.innerHTML = '';
+    modalCorpo.appendChild(copia);
+    modalCorpo.scrollTop = 0;
+    btnAnt.disabled  = i === 0;
+    btnProx.disabled = i === botoesAno.length - 1;
+  }
+
+  function abrirAno(i) {
+    if (!modal) return;
+    pintarAno(i);
+    modal.hidden = false;
+    document.body.classList.add('is-locked');
+    $('#modalX').focus();
+  }
+
+  function fecharAno() {
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    modalCorpo.innerHTML = '';
+    document.body.classList.remove('is-locked');
+    if (botoesAno[anoAtual]) botoesAno[anoAtual].focus();
+  }
+
+  botoesAno.forEach(function (b, i) {
+    b.addEventListener('click', function () { abrirAno(i); });
+  });
+
+  if (modal) {
+    $('#modalX').addEventListener('click', fecharAno);
+    btnAnt.addEventListener('click', function () { if (anoAtual > 0) pintarAno(anoAtual - 1); });
+    btnProx.addEventListener('click', function () { if (anoAtual < botoesAno.length - 1) pintarAno(anoAtual + 1); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) fecharAno(); });
+  }
 
   /* ---------------------------------------------------- reveal no scroll */
   var alvos = $$('.reveal');
@@ -186,6 +242,7 @@
       img.loading = 'lazy';
       img.decoding = 'async';
       img.alt = '';
+      if (p.w && p.h) { img.width = p.w; img.height = p.h; }  // reserva o espaço
       a.appendChild(img);
 
       if (p.tipo === 'reel') {
